@@ -72,7 +72,22 @@ void AUPPlayerController::OnInputMoveTriggered(const FInputActionValue& InputAct
 
 void AUPPlayerController::OnInputSprint(const FInputActionInstance& InputActionInstance)
 {
+	if (ControlledCharacter == nullptr)
+	{
+		return;
+	}
 
+	switch (InputActionInstance.GetTriggerEvent())
+	{
+	case ETriggerEvent::Started:
+		ControlledCharacter->ToggleSprint(true);
+		break;
+	case ETriggerEvent::Completed:
+		ControlledCharacter->ToggleSprint(false);
+		break;
+	default:
+		break;
+	}
 }
 
 void AUPPlayerController::OnInputJumpStarted()

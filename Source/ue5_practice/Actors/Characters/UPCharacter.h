@@ -12,17 +12,21 @@ class UE5_PRACTICE_API AUPCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AUPCharacter();
 
-protected:
-	// Called when the game starts or when spawned
+	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
-
-public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	void ToggleSprint(bool bActive);
+	
+private:
+	void UpdateMaxWalkSpeed();
+	
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Movement")
+	float SprintSpeedRate = 2.f;
+	
+private:
+	float OriginalWalkSpeed;
+	bool bSprinting = false;
 };

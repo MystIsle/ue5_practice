@@ -2,34 +2,40 @@
 
 
 #include "UPCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
-// Sets default values
 AUPCharacter::AUPCharacter()
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
+}
+void AUPCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
 
+	OriginalWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 }
 
-// Called when the game starts or when spawned
 void AUPCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UpdateMaxWalkSpeed();
+}
+
+void AUPCharacter::ToggleSprint(bool bActive)
+{
+	if (bSprinting == bActive)
+	{
+		return;
+	}
 	
+	bSprinting = bActive;
+	UpdateMaxWalkSpeed();
 }
 
-// Called every frame
-void AUPCharacter::Tick(float DeltaTime)
+void AUPCharacter::UpdateMaxWalkSpeed()
 {
-	Super::Tick(DeltaTime);
-
+	auto CharMovementComp = GetCharacterMovement();
+	CharMovementComp->MaxWalkSpeed = bSprinting ? OriginalWalkSpeed * SprintSpeedRate : OriginalWalkSpeed;
 }
-
-// Called to bind functionality to input
-void AUPCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-}
-
