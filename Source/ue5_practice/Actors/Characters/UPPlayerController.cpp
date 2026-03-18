@@ -31,14 +31,14 @@ void AUPPlayerController::BeginPlay()
 void AUPPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	
+
 	ControlledCharacter = Cast<AUPCharacter>(InPawn);
 }
 
 void AUPPlayerController::OnUnPossess()
 {
 	Super::OnUnPossess();
-	
+
 	ControlledCharacter = nullptr;
 }
 
@@ -54,7 +54,20 @@ void AUPPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AUPPlayerController::OnInputMoveTriggered(const FInputActionValue& InputActionValue)
 {
+	if (ControlledCharacter == nullptr)
+	{
+		return;
+	}
 	
+	const FRotator Rotation = PlayerCameraManager->GetCameraRotation();                                                         
+	const FRotator YawRotation(0, Rotation.Yaw, 0);                                                           
+   
+	const FVector ForwardDir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);                            
+	const FVector RightDir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	
+	FVector2D InputValue = InputActionValue.Get<FVector2D>();
+	ControlledCharacter->AddMovementInput(ForwardDir, InputValue.X);                                          
+	ControlledCharacter->AddMovementInput(RightDir, InputValue.Y);
 }
 
 void AUPPlayerController::OnInputSprint(const FInputActionInstance& InputActionInstance)
@@ -64,5 +77,10 @@ void AUPPlayerController::OnInputSprint(const FInputActionInstance& InputActionI
 
 void AUPPlayerController::OnInputJumpStarted()
 {
-	
+	if (ControlledCharacter == nullptr)
+	{
+		return;
+	}
+
+	ControlledCharacter->Jump();
 }
