@@ -18,7 +18,8 @@ public:
 	virtual void BeginPlay() override;
 	
 	void ToggleSprint(bool bActive);
-	
+	bool IsSprinting() const { return bSprinting; }
+
 private:
 	void UpdateMaxWalkSpeed();
 	
