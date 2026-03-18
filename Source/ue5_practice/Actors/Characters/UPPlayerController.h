@@ -20,6 +20,8 @@ class UE5_PRACTICE_API AUPPlayerController : public APlayerController
 protected:
 	virtual void SetupInputComponent() override;
 	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 	
 public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -36,6 +38,9 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> InputAction_Jump;
+	
+	UPROPERTY()
+	TObjectPtr<AUPCharacter> ControlledCharacter;
 	
 private:
 	void OnInputMoveTriggered(const FInputActionValue& InputActionValue);

@@ -3,6 +3,7 @@
 #include "UPPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "UPCharacter.h"
 
 void AUPPlayerController::SetupInputComponent()
 {
@@ -25,6 +26,20 @@ void AUPPlayerController::BeginPlay()
 	{
 		InputSubsystem->AddMappingContext(InputMappingContext, 0);
 	}
+}
+
+void AUPPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	
+	ControlledCharacter = Cast<AUPCharacter>(InPawn);
+}
+
+void AUPPlayerController::OnUnPossess()
+{
+	Super::OnUnPossess();
+	
+	ControlledCharacter = nullptr;
 }
 
 void AUPPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
