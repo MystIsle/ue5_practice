@@ -15,6 +15,7 @@ void AUPPlayerController::SetupInputComponent()
 		EnhancedInput->BindAction(InputAction_Sprint, ETriggerEvent::Started, this, &ThisClass::OnInputSprint);
 		EnhancedInput->BindAction(InputAction_Sprint, ETriggerEvent::Completed, this, &ThisClass::OnInputSprint);
 		EnhancedInput->BindAction(InputAction_Jump, ETriggerEvent::Started, this, &ThisClass::OnInputJumpStarted);
+		EnhancedInput->BindAction(InputAction_Attack, ETriggerEvent::Started, this, &ThisClass::OnInputAttack);
 	}
 }
 
@@ -98,4 +99,14 @@ void AUPPlayerController::OnInputJumpStarted()
 	}
 
 	ControlledCharacter->Jump();
+}
+
+void AUPPlayerController::OnInputAttack()
+{
+	if (ControlledCharacter == nullptr)
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Attack"));
 }

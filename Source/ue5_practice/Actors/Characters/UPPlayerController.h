@@ -38,12 +38,16 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> InputAction_Jump;
-	
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputAction> InputAction_Attack;
+
 	UPROPERTY()
 	TObjectPtr<AUPCharacter> ControlledCharacter;
-	
+
 private:
 	void OnInputMoveTriggered(const FInputActionValue& InputActionValue);
 	void OnInputSprint(const FInputActionInstance& InputActionInstance);
 	void OnInputJumpStarted();
+	void OnInputAttack();
 };
