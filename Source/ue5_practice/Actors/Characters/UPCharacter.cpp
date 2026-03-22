@@ -7,8 +7,9 @@
 
 AUPCharacter::AUPCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 }
+
 void AUPCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -23,6 +24,13 @@ void AUPCharacter::BeginPlay()
 	UpdateMaxWalkSpeed();
 }
 
+void AUPCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UpdateMovementState();
+}
+
 void AUPCharacter::ToggleSprint(bool bActive)
 {
 	if (bSprinting == bActive)
@@ -34,9 +42,24 @@ void AUPCharacter::ToggleSprint(bool bActive)
 	UpdateMaxWalkSpeed();
 }
 
+bool AUPCharacter::CanJumpInternal_Implementation() const
+{
+	if (bIsAttacking)
+	{
+		return false;
+	}
+
+	return Super::CanJumpInternal_Implementation();
+}
+
 void AUPCharacter::Attack()
 {
 	if (AttackMontage == nullptr)
+	{
+		return;
+	}
+	
+	if (GetCharacterMovement()->IsFalling())
 	{
 		return;
 	}
@@ -53,10 +76,46 @@ void AUPCharacter::Attack()
 	}
 
 	AnimInstance->Montage_Play(AttackMontage);
+	
+	FAnimMontageInstance* MontageInstance = AnimInstance->GetActiveInstanceForMontage(AttackMontage);
+	if (MontageInstance == nullptr)
+	{
+		return;
+	}
+	
+	bIsAttacking = true;
+	MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnAttackMontageEnded);
+	GetController()->SetIgnoreMoveInput(true);
+}
+
+
+void AUPCharacter::UpdateMovementState()
+{
+	if (bIsAttacking || GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero())
+	{
+		MovementState = EUPMovementState::Idle;
+	}
+	else if (bSprinting)
+	{
+		MovementState = EUPMovementState::Run;
+	}
+	else
+	{
+		MovementState = EUPMovementState::Walk;
+	}
 }
 
 void AUPCharacter::UpdateMaxWalkSpeed()
 {
 	auto CharMovementComp = GetCharacterMovement();
 	CharMovementComp->MaxWalkSpeed = bSprinting ? OriginalWalkSpeed * SprintSpeedRate : OriginalWalkSpeed;
+}
+
+void AUPCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	bIsAttacking = false;
+	if (const auto Controller = GetController())
+	{
+		Controller->SetIgnoreMoveInput(false);	
+	}
 }

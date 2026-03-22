@@ -4,18 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "UPCharacter.h"
 #include "UPCharacterAnimInstance.generated.h"
 
-class AUPCharacter;
 class UCharacterMovementComponent;
-
-UENUM(BlueprintType)
-enum class EUPMovementState : uint8
-{
-	Idle,
-	Walk,
-	Run
-};
 
 UCLASS()
 class UE5_PRACTICE_API UUPCharacterAnimInstance : public UAnimInstance
@@ -38,7 +30,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement")
 	EUPMovementState MovementState = EUPMovementState::Idle;
-	
+
 	UPROPERTY()
 	TObjectPtr<AUPCharacter> OwningCharacter;
 

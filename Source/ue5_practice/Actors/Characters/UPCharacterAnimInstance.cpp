@@ -25,20 +25,5 @@ void UUPCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Speed = MovementComponent->Velocity.Size2D();
 	bInAir = MovementComponent->IsFalling();
 	bIsFalling = MovementComponent->Velocity.Z <= 0.f;
-
-	if (MovementComponent->GetCurrentAcceleration().IsNearlyZero() == false)
-	{
-		if (OwningCharacter->IsSprinting())
-		{
-			MovementState = EUPMovementState::Run;
-		}
-		else
-		{
-			MovementState = EUPMovementState::Walk;
-		}
-	}
-	else
-	{
-		MovementState = EUPMovementState::Idle;
-	}
+	MovementState = OwningCharacter->GetMovementState();
 }

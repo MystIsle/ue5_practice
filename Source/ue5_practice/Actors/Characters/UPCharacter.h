@@ -8,6 +8,14 @@
 
 class UAnimMontage;
 
+UENUM(BlueprintType)
+enum class EUPMovementState : uint8
+{
+	Idle,
+	Walk,
+	Run
+};
+
 UCLASS()
 class UE5_PRACTICE_API AUPCharacter : public ACharacter
 {
@@ -18,14 +26,23 @@ public:
 
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+
+protected:
+	virtual bool CanJumpInternal_Implementation() const override;
+
+public:
+	FORCEINLINE bool IsSprinting() const { return bSprinting; }
+	FORCEINLINE bool IsAttacking() const { return bIsAttacking; }
+	FORCEINLINE EUPMovementState GetMovementState() const { return MovementState; }
 
 	void ToggleSprint(bool bActive);
-	bool IsSprinting() const { return bSprinting; }
-
 	void Attack();
 
 private:
+	void UpdateMovementState();
 	void UpdateMaxWalkSpeed();
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Movement")
@@ -37,4 +54,6 @@ protected:
 private:
 	float OriginalWalkSpeed;
 	bool bSprinting = false;
+	bool bIsAttacking = false;
+	EUPMovementState MovementState = EUPMovementState::Idle;
 };
