@@ -29,9 +29,30 @@ void AUPCharacter::ToggleSprint(bool bActive)
 	{
 		return;
 	}
-	
+
 	bSprinting = bActive;
 	UpdateMaxWalkSpeed();
+}
+
+void AUPCharacter::Attack()
+{
+	if (AttackMontage == nullptr)
+	{
+		return;
+	}
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance == nullptr)
+	{
+		return;
+	}
+
+	if (AnimInstance->Montage_IsPlaying(AttackMontage))
+	{
+		return;
+	}
+
+	AnimInstance->Montage_Play(AttackMontage);
 }
 
 void AUPCharacter::UpdateMaxWalkSpeed()

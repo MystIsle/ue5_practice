@@ -108,5 +108,5 @@ void AUPPlayerController::OnInputAttack()
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Attack"));
+	ControlledCharacter->Attack();
 }
