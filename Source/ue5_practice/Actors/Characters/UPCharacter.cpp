@@ -114,8 +114,8 @@ void AUPCharacter::UpdateMaxWalkSpeed()
 void AUPCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	bIsAttacking = false;
-	if (const auto Controller = GetController())
+	if (const auto CharController = GetController())
 	{
-		Controller->SetIgnoreMoveInput(false);	
+		CharController->SetIgnoreMoveInput(false);	
 	}
 }
