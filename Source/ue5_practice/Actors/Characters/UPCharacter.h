@@ -7,6 +7,7 @@
 #include "UPCharacter.generated.h"
 
 class UAnimMontage;
+class UMotionWarpingComponent;
 
 UENUM(BlueprintType)
 enum class EUPMovementState : uint8
@@ -37,7 +38,7 @@ public:
 	FORCEINLINE EUPMovementState GetMovementState() const { return MovementState; }
 
 	void ToggleSprint(bool bActive);
-	void Attack();
+	void Attack(const FRotator& InRotation);
 
 private:
 	void UpdateMovementState();
@@ -45,11 +46,15 @@ private:
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
+	TObjectPtr<UMotionWarpingComponent> MotionWarpingComponent;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Movement")
 	float SprintSpeedRate = 2.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	TObjectPtr<UAnimMontage> AttackMontage;
+
 
 private:
 	float OriginalWalkSpeed;

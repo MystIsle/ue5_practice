@@ -44,9 +44,13 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<AUPCharacter> ControlledCharacter;
+	
+	bool bInputMove = false;
 
 private:
-	void OnInputMoveTriggered(const FInputActionValue& InputActionValue);
+	void InputMove(const FInputActionInstance& InputActionInstance);
+	
+	void OnInputMove(const FInputActionInstance& InputActionInstance);
 	void OnInputSprint(const FInputActionInstance& InputActionInstance);
 	void OnInputJumpStarted();
 	void OnInputAttack();

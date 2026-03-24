@@ -11,7 +11,9 @@ void AUPPlayerController::SetupInputComponent()
 
 	if (auto EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent))
 	{
-		EnhancedInput->BindAction(InputAction_Move, ETriggerEvent::Triggered, this, &ThisClass::OnInputMoveTriggered);
+		EnhancedInput->BindAction(InputAction_Move, ETriggerEvent::Started, this, &ThisClass::OnInputMove);
+		EnhancedInput->BindAction(InputAction_Move, ETriggerEvent::Triggered, this, &ThisClass::OnInputMove);
+		EnhancedInput->BindAction(InputAction_Move, ETriggerEvent::Completed, this, &ThisClass::OnInputMove);
 		EnhancedInput->BindAction(InputAction_Sprint, ETriggerEvent::Started, this, &ThisClass::OnInputSprint);
 		EnhancedInput->BindAction(InputAction_Sprint, ETriggerEvent::Completed, this, &ThisClass::OnInputSprint);
 		EnhancedInput->BindAction(InputAction_Jump, ETriggerEvent::Started, this, &ThisClass::OnInputJumpStarted);
@@ -53,22 +55,48 @@ void AUPPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-void AUPPlayerController::OnInputMoveTriggered(const FInputActionValue& InputActionValue)
+void AUPPlayerController::InputMove(const FInputActionInstance& InputActionInstance)
 {
 	if (ControlledCharacter == nullptr)
 	{
 		return;
 	}
-	
-	const FRotator Rotation = PlayerCameraManager->GetCameraRotation();                                                         
-	const FRotator YawRotation(0, Rotation.Yaw, 0);                                                           
-   
-	const FVector ForwardDir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);                            
-	const FVector RightDir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-	
-	FVector2D InputValue = InputActionValue.Get<FVector2D>();
-	ControlledCharacter->AddMovementInput(ForwardDir, InputValue.X);                                          
-	ControlledCharacter->AddMovementInput(RightDir, InputValue.Y);
+
+	const FRotator Rotation = PlayerCameraManager->GetCameraRotation();
+	const FRotator Rotation2D(0, Rotation.Yaw, 0);
+
+	FVector2D InputValue = InputActionInstance.GetValue().Get<FVector2D>();
+	if (InputValue.IsNearlyZero())
+	{
+		SetControlRotation(ControlledCharacter->GetActorRotation());
+		return;
+	}
+			
+	FVector InputDir = FVector(InputValue, 0.f).GetSafeNormal();
+	FVector WorldInputDir = Rotation2D.RotateVector(InputDir);
+	ControlledCharacter->AddMovementInput(WorldInputDir);
+	SetControlRotation(WorldInputDir.Rotation());
+}
+
+void AUPPlayerController::OnInputMove(const FInputActionInstance& InputActionInstance)
+{
+	switch (InputActionInstance.GetTriggerEvent())
+	{
+	// 입력 시작
+	case ETriggerEvent::Started:
+		bInputMove = true;
+		InputMove(InputActionInstance);
+		break;
+	case ETriggerEvent::Triggered:
+		InputMove(InputActionInstance);
+		break;
+	case ETriggerEvent::Completed:
+		// 입력 끝
+		bInputMove = false;
+		return;
+	default:
+		return;
+	}
 }
 
 void AUPPlayerController::OnInputSprint(const FInputActionInstance& InputActionInstance)
@@ -108,5 +136,12 @@ void AUPPlayerController::OnInputAttack()
 		return;
 	}
 
-	ControlledCharacter->Attack();
+	auto AttackRotation = ControlledCharacter->GetActorRotation();
+	if (bInputMove)
+	{
+		// Control Rotation
+		AttackRotation = GetDesiredRotation();
+	}
+
+	ControlledCharacter->Attack(AttackRotation);
 }

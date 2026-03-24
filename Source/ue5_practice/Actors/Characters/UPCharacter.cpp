@@ -2,12 +2,15 @@
 
 
 #include "UPCharacter.h"
+#include "MotionWarpingComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 
 AUPCharacter::AUPCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	
+	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
 }
 
 void AUPCharacter::PostInitializeComponents()
@@ -52,7 +55,7 @@ bool AUPCharacter::CanJumpInternal_Implementation() const
 	return Super::CanJumpInternal_Implementation();
 }
 
-void AUPCharacter::Attack()
+void AUPCharacter::Attack(const FRotator& InRotation)
 {
 	if (AttackMontage == nullptr)
 	{
@@ -74,7 +77,8 @@ void AUPCharacter::Attack()
 	{
 		return;
 	}
-
+	
+	MotionWarpingComponent->AddOrUpdateWarpTargetFromLocationAndRotation(TEXT("Target"), GetActorLocation(), InRotation);
 	AnimInstance->Montage_Play(AttackMontage);
 	
 	FAnimMontageInstance* MontageInstance = AnimInstance->GetActiveInstanceForMontage(AttackMontage);
@@ -82,6 +86,32 @@ void AUPCharacter::Attack()
 	{
 		return;
 	}
+	
+	FVector ActorLocation = GetActorLocation();
+
+	DrawDebugDirectionalArrow(
+		GetWorld(),
+		GetActorLocation(),
+		ActorLocation + InRotation.Vector() * 200,
+		30,
+		FColor::Red,
+		false,
+		5.f,
+		2,
+		5
+	);
+	
+	DrawDebugDirectionalArrow(
+		GetWorld(),
+		GetActorLocation(),
+		ActorLocation + GetActorRotation().Vector() * 200,
+		30,
+		FColor::Yellow,
+		false,
+		5.f,
+		3,
+		5
+	);
 	
 	bIsAttacking = true;
 	MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnAttackMontageEnded);
