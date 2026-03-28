@@ -54,6 +54,10 @@ void AUPPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		InputSubsystem->RemoveMappingContext(InputMappingContext);
 	}
 }
+FGenericTeamId AUPPlayerController::GetGenericTeamId() const
+{
+	return ControlledCharacter ? ControlledCharacter->GetGenericTeamId() : FGenericTeamId();
+}
 
 void AUPPlayerController::InputMove(const FInputActionInstance& InputActionInstance)
 {
@@ -71,7 +75,7 @@ void AUPPlayerController::InputMove(const FInputActionInstance& InputActionInsta
 		SetControlRotation(ControlledCharacter->GetActorRotation());
 		return;
 	}
-			
+
 	FVector InputDir = FVector(InputValue, 0.f).GetSafeNormal();
 	FVector WorldInputDir = Rotation2D.RotateVector(InputDir);
 	ControlledCharacter->AddMovementInput(WorldInputDir);
