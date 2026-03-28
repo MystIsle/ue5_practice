@@ -38,10 +38,12 @@ protected:
 
 public:
 	FORCEINLINE bool IsSprinting() const { return bSprinting; }
-	FORCEINLINE bool IsAttacking() const { return bIsAttacking; }
+	FORCEINLINE bool IsAttacking() const { return bAttacking; }
 	FORCEINLINE EUPMovementState GetMovementState() const { return MovementState; }
 	FORCEINLINE EUPTeamID GetTeamID() const { return TeamID; }
+	FORCEINLINE int GetATK() const { return ATK; }
 
+	void ApplyDamage(int Damage);
 	void ToggleSprint(bool bActive);
 	void Attack(const FRotator& InRotation);
 
@@ -73,6 +75,6 @@ protected:
 private:
 	float OriginalWalkSpeed;
 	bool bSprinting = false;
-	bool bIsAttacking = false;
+	bool bAttacking = false;
 	EUPMovementState MovementState = EUPMovementState::Idle;
 };

@@ -52,12 +52,17 @@ void AUPCharacter::ToggleSprint(bool bActive)
 
 bool AUPCharacter::CanJumpInternal_Implementation() const
 {
-	if (bIsAttacking)
+	if (bAttacking)
 	{
 		return false;
 	}
 
 	return Super::CanJumpInternal_Implementation();
+}
+
+void AUPCharacter::ApplyDamage(int Damage)
+{
+	UE_LOG(LogTemp, Log, TEXT("AUPCharacter::ApplyDamage() %s"), *GetFName().ToString());
 }
 
 void AUPCharacter::Attack(const FRotator& InRotation)
@@ -97,14 +102,14 @@ void AUPCharacter::Attack(const FRotator& InRotation)
 		DebugShowAttackDirection(InRotation);
 	}
 
-	bIsAttacking = true;
+	bAttacking = true;
 	MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnAttackMontageEnded);
 	GetController()->SetIgnoreMoveInput(true);
 }
 
 void AUPCharacter::UpdateMovementState()
 {
-	if (bIsAttacking || GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero())
+	if (bAttacking || GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero())
 	{
 		MovementState = EUPMovementState::Idle;
 	}
@@ -127,7 +132,7 @@ void AUPCharacter::UpdateMaxWalkSpeed()
 void AUPCharacter::DebugShowAttackDirection(const FRotator& InRotation)
 {
 	const FVector ActorLocation = GetActorLocation();
-	
+
 	DrawDebugDirectionalArrow(
 		GetWorld(),
 		GetActorLocation(),
@@ -155,7 +160,7 @@ void AUPCharacter::DebugShowAttackDirection(const FRotator& InRotation)
 
 void AUPCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	bIsAttacking = false;
+	bAttacking = false;
 	if (const auto CharController = GetController())
 	{
 		CharController->SetIgnoreMoveInput(false);

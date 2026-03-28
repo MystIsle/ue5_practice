@@ -1,7 +1,6 @@
 // Copyright (c) 2026 Team Sparta. All rights reserved.
 
 #include "UPCharacterAnimInstance.h"
-#include "UPCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void UUPCharacterAnimInstance::NativeInitializeAnimation()

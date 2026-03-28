@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Actors/Characters/UPCharacter.h"
 #include "Animation/AnimInstance.h"
-#include "UPCharacter.h"
 #include "UPCharacterAnimInstance.generated.h"
 
 class UCharacterMovementComponent;
