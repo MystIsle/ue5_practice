@@ -3,6 +3,7 @@
 
 #include "UPCharacter.h"
 #include "MotionWarpingComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 static TAutoConsoleVariable<bool> CVarShowAttackDirection(
@@ -52,7 +53,7 @@ void AUPCharacter::ToggleSprint(bool bActive)
 
 bool AUPCharacter::CanJumpInternal_Implementation() const
 {
-	if (bAttacking)
+	if (IsDead() || bAttacking)
 	{
 		return false;
 	}
@@ -62,12 +63,18 @@ bool AUPCharacter::CanJumpInternal_Implementation() const
 
 void AUPCharacter::ApplyDamage(int Damage)
 {
-	HP -= Damage;
-	if (HP < 0)
+	if (IsDead())
 	{
-		HP = 0;
+		return;
 	}
 
+	HP -= Damage;
+	if (HP <= 0)
+	{
+		Die();
+		return;
+	}
+	
 	HitReact();
 }
 
@@ -89,14 +96,14 @@ void AUPCharacter::HitReact()
 	{
 		return;
 	}
-	
+
 	HitReactIndex = (HitReactIndex + 1) % HitReactMontages.Num();
-	
+
 	if (bAttacking == true)
 	{
 		StopAttack();
 	}
-	
+
 	AnimInstance->Montage_Play(HitMontage);
 
 	FAnimMontageInstance* MontageInstance = AnimInstance->GetActiveInstanceForMontage(HitMontage);
@@ -109,6 +116,30 @@ void AUPCharacter::HitReact()
 	{
 		CharController->SetIgnoreMoveInput(true);
 	}
+}
+
+void AUPCharacter::Die()
+{
+	HP = 0;
+
+	if (bAttacking == true)
+	{
+		StopAttack();
+	}
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance != nullptr && DeathMontages.Num() > 0)
+	{
+		const int Index = FMath::RandRange(0, DeathMontages.Num() - 1);
+		AnimInstance->Montage_Play(DeathMontages[Index]);
+	}
+
+	if (const auto CharController = GetController())
+	{
+		CharController->SetIgnoreMoveInput(true);
+	}
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AUPCharacter::StopAttack()
@@ -132,6 +163,11 @@ void AUPCharacter::OnHitReactMontageBlendingOutStated(UAnimMontage* Montage, boo
 
 void AUPCharacter::Attack(const FRotator& InRotation)
 {
+	if (IsDead())
+	{
+		return;
+	}
+
 	if (AttackMontage == nullptr)
 	{
 		return;

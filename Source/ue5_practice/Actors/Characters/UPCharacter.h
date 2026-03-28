@@ -43,6 +43,7 @@ public:
 	FORCEINLINE EUPTeamID GetTeamID() const { return TeamID; }
 	FORCEINLINE int GetATK() const { return ATK; }
 	FORCEINLINE int GetHP() const { return HP; }
+	FORCEINLINE bool IsDead() const { return HP <= 0; }
 
 	void ApplyDamage(int Damage);
 	void ToggleSprint(bool bActive);
@@ -50,6 +51,7 @@ public:
 
 private:
 	void HitReact();
+	void Die();
 	void StopAttack();
 	void UpdateMovementState();
 	void UpdateMaxWalkSpeed();
@@ -72,6 +74,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	TArray<TObjectPtr<UAnimMontage>> HitReactMontages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
+	TArray<TObjectPtr<UAnimMontage>> DeathMontages;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	int HP = 100;
