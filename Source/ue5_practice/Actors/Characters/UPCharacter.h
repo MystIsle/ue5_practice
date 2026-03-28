@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericTeamAgentInterface.h"
 #include "GameFramework/Character.h"
+#include "Team/UPTeamID.h"
 #include "UPCharacter.generated.h"
 
 class UAnimMontage;
@@ -18,7 +20,7 @@ enum class EUPMovementState : uint8
 };
 
 UCLASS()
-class UE5_PRACTICE_API AUPCharacter : public ACharacter
+class UE5_PRACTICE_API AUPCharacter : public ACharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -29,6 +31,8 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+	virtual FGenericTeamId GetGenericTeamId() const override { return static_cast<uint8>(TeamID); }
+
 protected:
 	virtual bool CanJumpInternal_Implementation() const override;
 
@@ -36,6 +40,7 @@ public:
 	FORCEINLINE bool IsSprinting() const { return bSprinting; }
 	FORCEINLINE bool IsAttacking() const { return bIsAttacking; }
 	FORCEINLINE EUPMovementState GetMovementState() const { return MovementState; }
+	FORCEINLINE EUPTeamID GetTeamID() const { return TeamID; }
 
 	void ToggleSprint(bool bActive);
 	void Attack(const FRotator& InRotation);
@@ -48,13 +53,15 @@ private:
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	TObjectPtr<UMotionWarpingComponent> MotionWarpingComponent;
-	
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Team")
+	EUPTeamID TeamID = EUPTeamID::NoTeam;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Movement")
 	float SprintSpeedRate = 2.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	TObjectPtr<UAnimMontage> AttackMontage;
-
 
 private:
 	float OriginalWalkSpeed;

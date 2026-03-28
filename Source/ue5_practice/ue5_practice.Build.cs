@@ -15,10 +15,9 @@ public class ue5_practice : ModuleRules
 			"Engine",
 			"InputCore", 
 			"EnhancedInput",
-			"MotionWarping"
+			"MotionWarping",
+			"AIModule"
 		});
-
-		PrivateDependencyModuleNames.AddRange(new string[] { });
 
 		PublicIncludePaths.AddRange([ModuleDirectory]);
 
