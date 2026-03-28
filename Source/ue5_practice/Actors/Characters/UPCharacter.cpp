@@ -62,7 +62,72 @@ bool AUPCharacter::CanJumpInternal_Implementation() const
 
 void AUPCharacter::ApplyDamage(int Damage)
 {
-	UE_LOG(LogTemp, Log, TEXT("AUPCharacter::ApplyDamage() %s"), *GetFName().ToString());
+	HP -= Damage;
+	if (HP < 0)
+	{
+		HP = 0;
+	}
+
+	HitReact();
+}
+
+void AUPCharacter::HitReact()
+{
+	if (HitReactMontages.Num() == 0)
+	{
+		return;
+	}
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance == nullptr)
+	{
+		return;
+	}
+
+	UAnimMontage* HitMontage = HitReactMontages[HitReactIndex];
+	if (HitMontage == nullptr)
+	{
+		return;
+	}
+	
+	HitReactIndex = (HitReactIndex + 1) % HitReactMontages.Num();
+	
+	if (bAttacking == true)
+	{
+		StopAttack();
+	}
+	
+	AnimInstance->Montage_Play(HitMontage);
+
+	FAnimMontageInstance* MontageInstance = AnimInstance->GetActiveInstanceForMontage(HitMontage);
+	if (MontageInstance != nullptr)
+	{
+		MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnHitReactMontageBlendingOutStated);
+	}
+
+	if (const auto CharController = GetController())
+	{
+		CharController->SetIgnoreMoveInput(true);
+	}
+}
+
+void AUPCharacter::StopAttack()
+{
+	if (bAttacking == false)
+	{
+		return;
+	}
+
+	bAttacking = false;
+	StopAnimMontage(AttackMontage);
+}
+
+void AUPCharacter::OnHitReactMontageBlendingOutStated(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (const auto CharController = GetController())
+	{
+		CharController->SetIgnoreMoveInput(false);
+	}
 }
 
 void AUPCharacter::Attack(const FRotator& InRotation)
@@ -103,7 +168,7 @@ void AUPCharacter::Attack(const FRotator& InRotation)
 	}
 
 	bAttacking = true;
-	MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnAttackMontageEnded);
+	MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnAttackMontageBlendingOutStarted);
 	GetController()->SetIgnoreMoveInput(true);
 }
 
@@ -158,7 +223,7 @@ void AUPCharacter::DebugShowAttackDirection(const FRotator& InRotation)
 	);
 }
 
-void AUPCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+void AUPCharacter::OnAttackMontageBlendingOutStarted(UAnimMontage* Montage, bool bInterrupted)
 {
 	bAttacking = false;
 	if (const auto CharController = GetController())

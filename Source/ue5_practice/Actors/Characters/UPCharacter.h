@@ -42,16 +42,20 @@ public:
 	FORCEINLINE EUPMovementState GetMovementState() const { return MovementState; }
 	FORCEINLINE EUPTeamID GetTeamID() const { return TeamID; }
 	FORCEINLINE int GetATK() const { return ATK; }
+	FORCEINLINE int GetHP() const { return HP; }
 
 	void ApplyDamage(int Damage);
 	void ToggleSprint(bool bActive);
 	void Attack(const FRotator& InRotation);
 
 private:
+	void HitReact();
+	void StopAttack();
 	void UpdateMovementState();
 	void UpdateMaxWalkSpeed();
 	void DebugShowAttackDirection(const FRotator& InRotation);
-	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	void OnAttackMontageBlendingOutStarted(UAnimMontage* Montage, bool bInterrupted);
+	void OnHitReactMontageBlendingOutStated(UAnimMontage* Montage, bool bInterrupted);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
@@ -65,6 +69,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	TObjectPtr<UAnimMontage> AttackMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
+	TArray<TObjectPtr<UAnimMontage>> HitReactMontages;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	int HP = 100;
@@ -76,5 +83,6 @@ private:
 	float OriginalWalkSpeed;
 	bool bSprinting = false;
 	bool bAttacking = false;
+	int HitReactIndex = 0;
 	EUPMovementState MovementState = EUPMovementState::Idle;
 };
