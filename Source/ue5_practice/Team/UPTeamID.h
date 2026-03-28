@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 
 UENUM(BlueprintType)
-enum class EUPTeamId : uint8
+enum class EUPTeamID : uint8
 {
 	Player = 0,
 	Monster = 1,
