@@ -48,6 +48,7 @@ public:
 private:
 	void UpdateMovementState();
 	void UpdateMaxWalkSpeed();
+	void DebugShowAttackDirection(const FRotator& InRotation);
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 protected:
