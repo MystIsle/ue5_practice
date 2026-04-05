@@ -8,6 +8,7 @@
 #include "Team/UPTeamID.h"
 #include "UPCharacter.generated.h"
 
+class UAIPerceptionStimuliSourceComponent;
 class UAnimMontage;
 class UMotionWarpingComponent;
 
@@ -60,6 +61,9 @@ private:
 	void OnHitReactMontageBlendingOutStarted(UAnimMontage* Montage, bool bInterrupted);
 
 protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI")
+	TObjectPtr<UAIPerceptionStimuliSourceComponent> StimuliSourceComp;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	TObjectPtr<UMotionWarpingComponent> MotionWarpingComponent;
 

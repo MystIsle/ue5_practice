@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "UPMonsterController.generated.h"
+
+class UBehaviorTree;
 
 enum class EUPTeamID : uint8;
 
@@ -17,4 +20,13 @@ public:
 	AUPMonsterController();
 
 	virtual FGenericTeamId GetGenericTeamId() const override;
+
+protected:
+	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="AI")
+	FName TargetActorKeyName = TEXT("TargetActor");
 };

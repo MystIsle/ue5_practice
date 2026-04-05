@@ -5,6 +5,7 @@
 #include "MotionWarpingComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
 
 static TAutoConsoleVariable<bool> CVarShowAttackDirection(
 	TEXT("Debug.ShowAttackDirection"),
@@ -17,6 +18,8 @@ AUPCharacter::AUPCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
+
+	StimuliSourceComp = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSource"));
 }
 
 void AUPCharacter::PostInitializeComponents()
@@ -120,26 +123,28 @@ void AUPCharacter::HitReact()
 
 void AUPCharacter::Die()
 {
+	// --- Logic ---
 	HP = 0;
 
 	if (bAttacking == true)
 	{
 		StopAttack();
 	}
-
+	
+	StimuliSourceComp->UnregisterFromPerceptionSystem();
+	if (const auto CharController = GetController())
+	{
+		CharController->SetIgnoreMoveInput(true);
+	}
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	// --- Cosmetic ---
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance != nullptr && DeathMontages.Num() > 0)
 	{
 		const int Index = FMath::RandRange(0, DeathMontages.Num() - 1);
 		AnimInstance->Montage_Play(DeathMontages[Index]);
 	}
-
-	if (const auto CharController = GetController())
-	{
-		CharController->SetIgnoreMoveInput(true);
-	}
-
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AUPCharacter::StopAttack()
