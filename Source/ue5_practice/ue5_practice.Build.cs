@@ -16,7 +16,8 @@ public class ue5_practice : ModuleRules
 			"InputCore", 
 			"EnhancedInput",
 			"MotionWarping",
-			"AIModule"
+			"AIModule",
+			"NavigationSystem"
 		});
 
 		PublicIncludePaths.AddRange([ModuleDirectory]);
