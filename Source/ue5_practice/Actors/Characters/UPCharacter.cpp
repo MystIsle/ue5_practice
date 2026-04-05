@@ -2,6 +2,8 @@
 
 
 #include "UPCharacter.h"
+#include "AIController.h"
+#include "BrainComponent.h"
 #include "MotionWarpingComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -77,7 +79,7 @@ void AUPCharacter::ApplyDamage(int Damage)
 		Die();
 		return;
 	}
-	
+
 	HitReact();
 }
 
@@ -119,6 +121,14 @@ void AUPCharacter::HitReact()
 	{
 		CharController->SetIgnoreMoveInput(true);
 	}
+
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		if (AIC->BrainComponent != nullptr)
+		{
+			AIC->BrainComponent->PauseLogic(TEXT("HitReact"));
+		}
+	}
 }
 
 void AUPCharacter::Die()
@@ -130,14 +140,14 @@ void AUPCharacter::Die()
 	{
 		StopAttack();
 	}
-	
+
 	StimuliSourceComp->UnregisterFromPerceptionSystem();
 	if (const auto CharController = GetController())
 	{
 		CharController->SetIgnoreMoveInput(true);
 	}
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
+
 	// --- Cosmetic ---
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance != nullptr && DeathMontages.Num() > 0)
@@ -163,6 +173,14 @@ void AUPCharacter::OnHitReactMontageBlendingOutStarted(UAnimMontage* Montage, bo
 	if (const auto CharController = GetController())
 	{
 		CharController->SetIgnoreMoveInput(false);
+	}
+
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		if (AIC->BrainComponent != nullptr)
+		{
+			AIC->BrainComponent->ResumeLogic(TEXT("HitReact"));
+		}
 	}
 }
 
@@ -218,7 +236,10 @@ void AUPCharacter::Attack(const FRotator& InRotation)
 
 void AUPCharacter::UpdateMovementState()
 {
-	if (bAttacking || GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero())
+	const bool bMoving = GetCharacterMovement()->Velocity.IsNearlyZero() == false
+		|| GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero() == false;
+
+	if (bAttacking || bMoving == false)
 	{
 		MovementState = EUPMovementState::Idle;
 	}

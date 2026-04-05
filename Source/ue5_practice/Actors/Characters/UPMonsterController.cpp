@@ -2,6 +2,8 @@
 
 
 #include "UPMonsterController.h"
+
+#include "BrainComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Perception/AIPerceptionComponent.h"
 
