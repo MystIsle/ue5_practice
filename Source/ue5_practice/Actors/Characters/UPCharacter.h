@@ -57,7 +57,7 @@ private:
 	void UpdateMaxWalkSpeed();
 	void DebugShowAttackDirection(const FRotator& InRotation);
 	void OnAttackMontageBlendingOutStarted(UAnimMontage* Montage, bool bInterrupted);
-	void OnHitReactMontageBlendingOutStated(UAnimMontage* Montage, bool bInterrupted);
+	void OnHitReactMontageBlendingOutStarted(UAnimMontage* Montage, bool bInterrupted);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")

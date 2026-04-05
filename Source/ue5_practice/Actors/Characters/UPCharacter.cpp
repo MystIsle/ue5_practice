@@ -109,7 +109,7 @@ void AUPCharacter::HitReact()
 	FAnimMontageInstance* MontageInstance = AnimInstance->GetActiveInstanceForMontage(HitMontage);
 	if (MontageInstance != nullptr)
 	{
-		MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnHitReactMontageBlendingOutStated);
+		MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnHitReactMontageBlendingOutStarted);
 	}
 
 	if (const auto CharController = GetController())
@@ -153,7 +153,7 @@ void AUPCharacter::StopAttack()
 	StopAnimMontage(AttackMontage);
 }
 
-void AUPCharacter::OnHitReactMontageBlendingOutStated(UAnimMontage* Montage, bool bInterrupted)
+void AUPCharacter::OnHitReactMontageBlendingOutStarted(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (const auto CharController = GetController())
 	{
@@ -205,7 +205,10 @@ void AUPCharacter::Attack(const FRotator& InRotation)
 
 	bAttacking = true;
 	MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnAttackMontageBlendingOutStarted);
-	GetController()->SetIgnoreMoveInput(true);
+	if (const auto CharController = GetController())
+	{
+		CharController->SetIgnoreMoveInput(true);
+	}
 }
 
 void AUPCharacter::UpdateMovementState()
