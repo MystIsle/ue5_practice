@@ -33,6 +33,7 @@ void AUPMonsterController::BeginPlay()
 	if (UAIPerceptionComponent* PerceptionComp = GetAIPerceptionComponent())
 	{
 		PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ThisClass::OnTargetPerceptionUpdated);
+		PerceptionComp->OnTargetPerceptionForgotten.AddDynamic(this, &ThisClass::OnTargetPerceptionForgotten);
 	}
 }
 
@@ -47,9 +48,17 @@ void AUPMonsterController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus 
 	if (Stimulus.WasSuccessfullySensed())
 	{
 		BlackboardComp->SetValueAsObject(TargetActorKeyName, Actor);
+	}
+}
+
+void AUPMonsterController::OnTargetPerceptionForgotten(AActor* Actor)
+{
+	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+	if (BlackboardComp == nullptr)
+	{
 		return;
 	}
-	
+
 	if (BlackboardComp->GetValueAsObject(TargetActorKeyName) == Actor)
 	{
 		BlackboardComp->ClearValue(TargetActorKeyName);

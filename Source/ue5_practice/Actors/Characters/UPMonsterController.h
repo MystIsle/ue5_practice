@@ -27,6 +27,9 @@ protected:
 	UFUNCTION()
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
+	UFUNCTION()
+	void OnTargetPerceptionForgotten(AActor* Actor);
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="AI")
 	FName TargetActorKeyName = TEXT("TargetActor");
 };
