@@ -155,6 +155,14 @@ void AUPCharacter::Die()
 		const int Index = FMath::RandRange(0, DeathMontages.Num() - 1);
 		AnimInstance->Montage_Play(DeathMontages[Index]);
 	}
+	
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		if (AIC->BrainComponent != nullptr)
+		{
+			AIC->BrainComponent->PauseLogic(TEXT("Die"));
+		}
+	}
 }
 
 void AUPCharacter::StopAttack()
