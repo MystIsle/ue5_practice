@@ -6,6 +6,7 @@
 #include "GenericTeamAgentInterface.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/OverlapResult.h"
+#include "Perception/AISense_Damage.h"
 
 UUPAnimNotify_Hitbox::UUPAnimNotify_Hitbox()
 {
@@ -67,7 +68,7 @@ void UUPAnimNotify_Hitbox::BranchingPointNotify(FBranchingPointNotifyPayload& Br
 
 void UUPAnimNotify_Hitbox::PerformSphereOverlap(USkeletalMeshComponent* MeshComp) const
 {
-	const AUPCharacter* OwnerCharacter = Cast<AUPCharacter>(MeshComp->GetOwner());
+	AUPCharacter* OwnerCharacter = Cast<AUPCharacter>(MeshComp->GetOwner());
 	if (OwnerCharacter == nullptr)
 	{
 		return;
@@ -113,7 +114,17 @@ void UUPAnimNotify_Hitbox::PerformSphereOverlap(USkeletalMeshComponent* MeshComp
 			continue;
 		}
 
-		HitCharacter->ApplyDamage(OwnerCharacter->GetATK());
+		int Damage = OwnerCharacter->GetATK();
+		UAISense_Damage::ReportDamageEvent(
+			OwnerCharacter,
+			HitActor,
+			OwnerCharacter,
+			Damage,
+			OwnerCharacter->GetActorLocation(),
+			HitActor->GetActorLocation()
+		);
+
+		HitCharacter->ApplyDamage(Damage);
 	}
 }
 
