@@ -4,6 +4,7 @@
 #include "UPMonsterController.h"
 
 #include "BrainComponent.h"
+#include "UPCharacter.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Perception/AIPerceptionComponent.h"
 
@@ -18,18 +19,13 @@ AUPMonsterController::AUPMonsterController()
 
 FGenericTeamId AUPMonsterController::GetGenericTeamId() const
 {
-	if (IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(GetPawn()))
-	{
-		return TeamAgentInterface->GetGenericTeamId();
-	}
-
-	return FGenericTeamId();
+	return OwnerCharacter ? OwnerCharacter->GetGenericTeamId() : FGenericTeamId();
 }
 
 void AUPMonsterController::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	if (UAIPerceptionComponent* PerceptionComp = GetAIPerceptionComponent())
 	{
 		PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ThisClass::OnTargetPerceptionUpdated);
@@ -37,8 +33,26 @@ void AUPMonsterController::BeginPlay()
 	}
 }
 
+void AUPMonsterController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	OwnerCharacter = Cast<AUPCharacter>(InPawn);
+	
+	FVector SpawnLocation = OwnerCharacter->GetActorLocation();
+	if (UBlackboardComponent* BlackboardComp = GetBlackboardComponent())
+	{
+		BlackboardComp->SetValueAsVector(SpawnLocationKeyName, SpawnLocation);
+	}
+}
+
 void AUPMonsterController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
+	UE_LOG(LogTemp, Log, TEXT("[%s] OnTargetPerceptionUpdated: %s, Sensed: %s"),
+		*GetName(),
+		*Actor->GetName(),
+		Stimulus.WasSuccessfullySensed() ? TEXT("true") : TEXT("false"));
+
 	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
 	if (BlackboardComp == nullptr)
 	{
@@ -53,6 +67,10 @@ void AUPMonsterController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus 
 
 void AUPMonsterController::OnTargetPerceptionForgotten(AActor* Actor)
 {
+	UE_LOG(LogTemp, Log, TEXT("[%s] OnTargetPerceptionForgotten: %s"),
+		*GetName(),
+		*Actor->GetName());
+
 	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
 	if (BlackboardComp == nullptr)
 	{
@@ -64,4 +82,3 @@ void AUPMonsterController::OnTargetPerceptionForgotten(AActor* Actor)
 		BlackboardComp->ClearValue(TargetActorKeyName);
 	}
 }
-

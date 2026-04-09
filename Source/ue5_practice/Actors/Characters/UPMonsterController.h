@@ -7,6 +7,7 @@
 #include "Perception/AIPerceptionTypes.h"
 #include "UPMonsterController.generated.h"
 
+class AUPCharacter;
 class UBehaviorTree;
 
 enum class EUPTeamID : uint8;
@@ -23,6 +24,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* InPawn) override;
 
 	UFUNCTION()
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
@@ -32,4 +34,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="AI")
 	FName TargetActorKeyName = TEXT("TargetActor");
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="AI")
+	FName SpawnLocationKeyName = TEXT("SpawnLocation");
+	
+	UPROPERTY()
+	TObjectPtr<AUPCharacter> OwnerCharacter;
 };
