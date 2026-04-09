@@ -10,7 +10,7 @@
 UUPBTDecorator_IsInRange::UUPBTDecorator_IsInRange()
 {
 	NodeName = TEXT("Is In Range");
-
+	bNotifyTick = true;
 	TargetKey.AddObjectFilter(this,
 	                          GET_MEMBER_NAME_CHECKED(UUPBTDecorator_IsInRange, TargetKey),
 	                          AUPCharacter::StaticClass()
@@ -31,9 +31,14 @@ bool UUPBTDecorator_IsInRange::CalculateRawConditionValue(UBehaviorTreeComponent
 	{
 		return false;
 	}
-	
-	// - 근접 공격인 경우 : 대상에 네비게이션 이동 가능한지 확인, 장애물 확인 
+
+	// - 근접 공격인 경우 : 대상에 네비게이션 이동 가능한지 확인, 장애물 확인
 
 	const float Dist = FVector::Dist2D(Target->GetActorLocation(), Self->GetActorLocation());
 	return Dist <= Range;
+}
+
+void UUPBTDecorator_IsInRange::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
+{
+	ConditionalFlowAbort(OwnerComp, EBTDecoratorAbortRequest::ConditionResultChanged);
 }
