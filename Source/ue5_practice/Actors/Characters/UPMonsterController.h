@@ -22,6 +22,8 @@ public:
 
 	virtual FGenericTeamId GetGenericTeamId() const override;
 
+	AActor* FindClosestEnemy() const;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;

@@ -6,7 +6,9 @@
 #include "BrainComponent.h"
 #include "UPCharacter.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "GenericTeamAgentInterface.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISenseConfig_Damage.h"
 
 
 AUPMonsterController::AUPMonsterController()
@@ -15,6 +17,10 @@ AUPMonsterController::AUPMonsterController()
 
 	UAIPerceptionComponent* PerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComp"));
 	SetPerceptionComponent(*PerceptionComp);
+
+	UAISenseConfig_Damage* DamageSenseConfig = CreateDefaultSubobject<UAISenseConfig_Damage>(TEXT("DamageSenseConfig"));
+	DamageSenseConfig->SetMaxAge(5.0f);
+	PerceptionComp->ConfigureSense(*DamageSenseConfig);
 }
 
 FGenericTeamId AUPMonsterController::GetGenericTeamId() const
@@ -46,38 +52,79 @@ void AUPMonsterController::OnPossess(APawn* InPawn)
 	}
 }
 
+AActor* AUPMonsterController::FindClosestEnemy() const
+{
+	const UAIPerceptionComponent* PerceptionComp = GetAIPerceptionComponent();
+	if (PerceptionComp == nullptr)
+	{
+		return nullptr;
+	}
+
+	TArray<AActor*> PerceivedActors;
+	PerceptionComp->GetCurrentlyPerceivedActors(nullptr, PerceivedActors);
+
+	APawn* OwnerPawn = GetPawn();
+	if (OwnerPawn == nullptr)
+	{
+		return nullptr;
+	}
+
+	const FVector OwnerLocation = OwnerPawn->GetActorLocation();
+
+	AActor* ClosestEnemy = nullptr;
+	float ClosestDistSq = TNumericLimits<float>::Max();
+
+	for (AActor* Actor : PerceivedActors)
+	{
+		if (Actor == nullptr)
+		{
+			continue;
+		}
+
+		const float DistSq = FVector::DistSquared2D(OwnerLocation, Actor->GetActorLocation());
+		if (DistSq < ClosestDistSq)
+		{
+			ClosestDistSq = DistSq;
+			ClosestEnemy = Actor;
+		}
+	}
+
+	return ClosestEnemy;
+}
+
 void AUPMonsterController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
-	UE_LOG(LogTemp, Log, TEXT("[%s] OnTargetPerceptionUpdated: %s, Sensed: %s"),
-		*GetName(),
-		*Actor->GetName(),
-		Stimulus.WasSuccessfullySensed() ? TEXT("true") : TEXT("false"));
-
 	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
 	if (BlackboardComp == nullptr)
 	{
 		return;
 	}
 
-	if (Stimulus.WasSuccessfullySensed())
+	AActor* ClosestEnemy = FindClosestEnemy();
+	if (ClosestEnemy != nullptr)
 	{
-		BlackboardComp->SetValueAsObject(TargetActorKeyName, Actor);
+		BlackboardComp->SetValueAsObject(TargetActorKeyName, ClosestEnemy);
+	}
+	else
+	{
+		BlackboardComp->ClearValue(TargetActorKeyName);
 	}
 }
 
 void AUPMonsterController::OnTargetPerceptionForgotten(AActor* Actor)
 {
-	UE_LOG(LogTemp, Log, TEXT("[%s] OnTargetPerceptionForgotten: %s"),
-		*GetName(),
-		*Actor->GetName());
-
 	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
 	if (BlackboardComp == nullptr)
 	{
 		return;
 	}
 
-	if (BlackboardComp->GetValueAsObject(TargetActorKeyName) == Actor)
+	AActor* ClosestEnemy = FindClosestEnemy();
+	if (ClosestEnemy != nullptr)
+	{
+		BlackboardComp->SetValueAsObject(TargetActorKeyName, ClosestEnemy);
+	}
+	else
 	{
 		BlackboardComp->ClearValue(TargetActorKeyName);
 	}
