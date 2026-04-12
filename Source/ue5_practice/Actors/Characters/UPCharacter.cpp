@@ -1,10 +1,13 @@
-﻿// Copyright (c) 2026 Team Sparta. All rights reserved.
+// Copyright (c) 2026 Team Sparta. All rights reserved.
 
 
 #include "UPCharacter.h"
 #include "AIController.h"
 #include "BrainComponent.h"
 #include "MotionWarpingComponent.h"
+#include "UPHitReactionComponent.h"
+#include "Animation/AnimMontage.h"
+#include "Combat/UPHitEffect.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
@@ -20,8 +23,8 @@ AUPCharacter::AUPCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarping"));
-
 	StimuliSourceComp = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSource"));
+	HitReactionComp = CreateDefaultSubobject<UUPHitReactionComponent>(TEXT("HitReaction"));
 }
 
 void AUPCharacter::PostInitializeComponents()
@@ -58,7 +61,7 @@ void AUPCharacter::ToggleSprint(bool bActive)
 
 bool AUPCharacter::CanJumpInternal_Implementation() const
 {
-	if (IsDead() || bAttacking)
+	if (IsDead() || bAttacking == true)
 	{
 		return false;
 	}
@@ -66,7 +69,7 @@ bool AUPCharacter::CanJumpInternal_Implementation() const
 	return Super::CanJumpInternal_Implementation();
 }
 
-void AUPCharacter::ApplyDamage(int Damage)
+void AUPCharacter::ApplyDamage(int Damage, const FUPHitEffect& HitEffect, const FVector& KnockbackDirection)
 {
 	if (IsDead())
 	{
@@ -74,95 +77,28 @@ void AUPCharacter::ApplyDamage(int Damage)
 	}
 
 	HP -= Damage;
-	if (HP <= 0)
-	{
-		Die();
-		return;
-	}
-
-	HitReact();
-}
-
-void AUPCharacter::HitReact()
-{
-	if (HitReactMontages.Num() == 0)
-	{
-		return;
-	}
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance == nullptr)
-	{
-		return;
-	}
-
-	UAnimMontage* HitMontage = HitReactMontages[HitReactIndex];
-	if (HitMontage == nullptr)
-	{
-		return;
-	}
-
-	HitReactIndex = (HitReactIndex + 1) % HitReactMontages.Num();
 
 	if (bAttacking == true)
 	{
 		StopAttack();
 	}
 
-	AnimInstance->Montage_Play(HitMontage);
-
-	FAnimMontageInstance* MontageInstance = AnimInstance->GetActiveInstanceForMontage(HitMontage);
-	if (MontageInstance != nullptr)
+	const bool bLethal = HP <= 0;
+	if (bLethal)
 	{
-		MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnHitReactMontageBlendingOutStarted);
-	}
+		HP = 0;
+		StimuliSourceComp->UnregisterFromPerceptionSystem();
 
-	if (const auto CharController = GetController())
-	{
-		CharController->SetIgnoreMoveInput(true);
-	}
-
-	if (AAIController* AIC = Cast<AAIController>(GetController()))
-	{
-		if (AIC->BrainComponent != nullptr)
+		if (AAIController* AIC = Cast<AAIController>(GetController()))
 		{
-			AIC->BrainComponent->PauseLogic(TEXT("HitReact"));
+			if (AIC->BrainComponent != nullptr)
+			{
+				AIC->BrainComponent->PauseLogic(TEXT("Die"));
+			}
 		}
 	}
-}
 
-void AUPCharacter::Die()
-{
-	// --- Logic ---
-	HP = 0;
-
-	if (bAttacking == true)
-	{
-		StopAttack();
-	}
-
-	StimuliSourceComp->UnregisterFromPerceptionSystem();
-	if (const auto CharController = GetController())
-	{
-		CharController->SetIgnoreMoveInput(true);
-	}
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	// --- Cosmetic ---
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance != nullptr && DeathMontages.Num() > 0)
-	{
-		const int Index = FMath::RandRange(0, DeathMontages.Num() - 1);
-		AnimInstance->Montage_Play(DeathMontages[Index]);
-	}
-	
-	if (AAIController* AIC = Cast<AAIController>(GetController()))
-	{
-		if (AIC->BrainComponent != nullptr)
-		{
-			AIC->BrainComponent->PauseLogic(TEXT("Die"));
-		}
-	}
+	HitReactionComp->PlayReact(HitEffect, KnockbackDirection);
 }
 
 void AUPCharacter::StopAttack()
@@ -174,22 +110,6 @@ void AUPCharacter::StopAttack()
 
 	bAttacking = false;
 	StopAnimMontage(AttackMontage);
-}
-
-void AUPCharacter::OnHitReactMontageBlendingOutStarted(UAnimMontage* Montage, bool bInterrupted)
-{
-	if (const auto CharController = GetController())
-	{
-		CharController->SetIgnoreMoveInput(false);
-	}
-
-	if (AAIController* AIC = Cast<AAIController>(GetController()))
-	{
-		if (AIC->BrainComponent != nullptr)
-		{
-			AIC->BrainComponent->ResumeLogic(TEXT("HitReact"));
-		}
-	}
 }
 
 void AUPCharacter::Attack(const FRotator& InRotation)
@@ -236,9 +156,35 @@ void AUPCharacter::Attack(const FRotator& InRotation)
 
 	bAttacking = true;
 	MontageInstance->OnMontageBlendingOutStarted.BindUObject(this, &ThisClass::OnAttackMontageBlendingOutStarted);
-	if (const auto CharController = GetController())
+	if (AController* CharController = GetController())
 	{
 		CharController->SetIgnoreMoveInput(true);
+	}
+}
+void AUPCharacter::SetControlLocked(bool bLocked, const TCHAR* PauseLogicReason)
+{
+	AController* PossessedController = GetController();
+	if (PossessedController == nullptr)
+	{
+		return;
+	}
+
+	PossessedController->SetIgnoreMoveInput(bLocked);
+
+	const AAIController* AiController = Cast<AAIController>(PossessedController);
+	UBrainComponent* BrainComp = AiController ? AiController->BrainComponent : nullptr;
+	if (BrainComp == nullptr)
+	{
+		return;
+	}
+
+	if (bLocked)
+	{
+		BrainComp->PauseLogic(PauseLogicReason);
+	}
+	else
+	{
+		BrainComp->ResumeLogic(PauseLogicReason);
 	}
 }
 
@@ -247,7 +193,7 @@ void AUPCharacter::UpdateMovementState()
 	const bool bMoving = GetCharacterMovement()->Velocity.IsNearlyZero() == false
 		|| GetCharacterMovement()->GetCurrentAcceleration().IsNearlyZero() == false;
 
-	if (bAttacking || bMoving == false)
+	if (bAttacking == true || bMoving == false)
 	{
 		MovementState = EUPMovementState::Idle;
 	}
@@ -261,13 +207,13 @@ void AUPCharacter::UpdateMovementState()
 	}
 }
 
-void AUPCharacter::UpdateMaxWalkSpeed()
+void AUPCharacter::UpdateMaxWalkSpeed() const
 {
 	auto CharMovementComp = GetCharacterMovement();
 	CharMovementComp->MaxWalkSpeed = bSprinting ? OriginalWalkSpeed * SprintSpeedRate : OriginalWalkSpeed;
 }
 
-void AUPCharacter::DebugShowAttackDirection(const FRotator& InRotation)
+void AUPCharacter::DebugShowAttackDirection(const FRotator& InRotation) const
 {
 	const FVector ActorLocation = GetActorLocation();
 
@@ -296,10 +242,63 @@ void AUPCharacter::DebugShowAttackDirection(const FRotator& InRotation)
 	);
 }
 
+void AUPCharacter::ApplyAttackerHitStop(int32 MontageInstanceID, const FUPHitEffect& HitEffect)
+{
+	if (HitEffect.HasHitStop() == false)
+	{
+		return;
+	}
+
+	UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();
+	if (AnimInst == nullptr)
+	{
+		return;
+	}
+
+	FAnimMontageInstance* MontageInstance = AnimInst->GetMontageInstanceForID(MontageInstanceID);
+	if (MontageInstance == nullptr)
+	{
+		return;
+	}
+
+	AttackerHitStopMontageInstanceID = MontageInstanceID;
+	MontageInstance->SetPlayRate(HitEffect.AnimPlayRate);
+
+	FTimerDelegate TimerDelegate;
+	TimerDelegate.BindUObject(this, &ThisClass::RestoreAttackMontagePlayRate, MontageInstanceID);
+	GetWorldTimerManager().SetTimer(
+		AttackerHitStopTimerHandle, TimerDelegate,
+		HitEffect.HitStopDuration, false
+	);
+}
+
+void AUPCharacter::RestoreAttackMontagePlayRate(int32 MontageInstanceID)
+{
+	UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();
+	if (AnimInst == nullptr)
+	{
+		return;
+	}
+
+	FAnimMontageInstance* MontageInstance = AnimInst->GetMontageInstanceForID(MontageInstanceID);
+	if (MontageInstance == nullptr)
+	{
+		return;
+	}
+
+	MontageInstance->SetPlayRate(1.f);
+}
+
 void AUPCharacter::OnAttackMontageBlendingOutStarted(UAnimMontage* Montage, bool bInterrupted)
 {
+	if (GetWorldTimerManager().IsTimerActive(AttackerHitStopTimerHandle))
+	{
+		GetWorldTimerManager().ClearTimer(AttackerHitStopTimerHandle);
+		RestoreAttackMontagePlayRate(AttackerHitStopMontageInstanceID);
+	}
+
 	bAttacking = false;
-	if (const auto CharController = GetController())
+	if (AController* CharController = GetController())
 	{
 		CharController->SetIgnoreMoveInput(false);
 	}

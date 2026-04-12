@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
+#include "Combat/UPHitEffect.h"
 #include "UPAnimNotify_Hitbox.generated.h"
 
 UENUM(BlueprintType)
@@ -41,8 +42,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Hitbox", meta=(ClampMin="1.0"))
 	float Radius = 50.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="HitEffect")
+	FUPHitEffect HitEffect;
+
 private:
-	void PerformSphereOverlap(USkeletalMeshComponent* MeshComp) const;
+	bool PerformSphereOverlap(USkeletalMeshComponent* MeshComp) const;
 	FVector GetHitboxLocation(USkeletalMeshComponent* MeshComp) const;
 	void DrawDebugHitbox(const UWorld* World, const FVector& Center) const;
 };

@@ -56,22 +56,34 @@ void UUPAnimNotify_Hitbox::BranchingPointNotify(FBranchingPointNotifyPayload& Br
 		return;
 	}
 
+	bool bHitEnemy = false;
 	switch (Shape)
 	{
 	case EUPHitboxShape::Sphere:
-		PerformSphereOverlap(MeshComp);
+		bHitEnemy = PerformSphereOverlap(MeshComp);
 		break;
 	default:
 		break;
 	}
+
+	if (bHitEnemy == false)
+	{
+		return;
+	}
+
+	AUPCharacter* OwnerCharacter = Cast<AUPCharacter>(MeshComp->GetOwner());
+	if (OwnerCharacter != nullptr)
+	{
+		OwnerCharacter->ApplyAttackerHitStop(BranchingPointPayload.MontageInstanceID, HitEffect);
+	}
 }
 
-void UUPAnimNotify_Hitbox::PerformSphereOverlap(USkeletalMeshComponent* MeshComp) const
+bool UUPAnimNotify_Hitbox::PerformSphereOverlap(USkeletalMeshComponent* MeshComp) const
 {
 	AUPCharacter* OwnerCharacter = Cast<AUPCharacter>(MeshComp->GetOwner());
 	if (OwnerCharacter == nullptr)
 	{
-		return;
+		return false;
 	}
 
 	const FVector Center = GetHitboxLocation(MeshComp);
@@ -90,9 +102,10 @@ void UUPAnimNotify_Hitbox::PerformSphereOverlap(USkeletalMeshComponent* MeshComp
 
 	if (bHit == false)
 	{
-		return;
+		return false;
 	}
 
+	bool bHitEnemy = false;
 	for (const FOverlapResult& Overlap : Overlaps)
 	{
 		AActor* HitActor = Overlap.GetActor();
@@ -114,6 +127,8 @@ void UUPAnimNotify_Hitbox::PerformSphereOverlap(USkeletalMeshComponent* MeshComp
 			continue;
 		}
 
+		bHitEnemy = true;
+
 		int Damage = OwnerCharacter->GetATK();
 		UAISense_Damage::ReportDamageEvent(
 			OwnerCharacter,
@@ -124,8 +139,11 @@ void UUPAnimNotify_Hitbox::PerformSphereOverlap(USkeletalMeshComponent* MeshComp
 			HitActor->GetActorLocation()
 		);
 
-		HitCharacter->ApplyDamage(Damage);
+		const FVector KnockbackDirection = OwnerCharacter->GetActorForwardVector();
+		HitCharacter->ApplyDamage(Damage, HitEffect, KnockbackDirection);
 	}
+
+	return bHitEnemy;
 }
 
 FVector UUPAnimNotify_Hitbox::GetHitboxLocation(USkeletalMeshComponent* MeshComp) const

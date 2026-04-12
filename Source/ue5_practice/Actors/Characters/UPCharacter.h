@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 Team Sparta. All rights reserved.
+// Copyright (c) 2026 Team Sparta. All rights reserved.
 
 #pragma once
 
@@ -8,9 +8,11 @@
 #include "Team/UPTeamID.h"
 #include "UPCharacter.generated.h"
 
+struct FUPHitEffect;
 class UAIPerceptionStimuliSourceComponent;
 class UAnimMontage;
 class UMotionWarpingComponent;
+class UUPHitReactionComponent;
 
 UENUM(BlueprintType)
 enum class EUPMovementState : uint8
@@ -45,20 +47,21 @@ public:
 	FORCEINLINE int GetATK() const { return ATK; }
 	FORCEINLINE int GetHP() const { return HP; }
 	FORCEINLINE bool IsDead() const { return HP <= 0; }
+	FORCEINLINE UUPHitReactionComponent* GetHitReactionComp() const { return HitReactionComp; }
 
-	void ApplyDamage(int Damage);
+	void ApplyDamage(int Damage, const FUPHitEffect& HitEffect, const FVector& KnockbackDirection);
+	void StopAttack();
 	void ToggleSprint(bool bActive);
 	void Attack(const FRotator& InRotation);
+	void SetControlLocked(bool bLocked, const TCHAR* PauseLogicReason);
+	void ApplyAttackerHitStop(int32 MontageInstanceID, const FUPHitEffect& HitEffect);
 
 private:
-	void HitReact();
-	void Die();
-	void StopAttack();
 	void UpdateMovementState();
-	void UpdateMaxWalkSpeed();
-	void DebugShowAttackDirection(const FRotator& InRotation);
+	void UpdateMaxWalkSpeed() const;
+	void DebugShowAttackDirection(const FRotator& InRotation) const;
 	void OnAttackMontageBlendingOutStarted(UAnimMontage* Montage, bool bInterrupted);
-	void OnHitReactMontageBlendingOutStarted(UAnimMontage* Montage, bool bInterrupted);
+	void RestoreAttackMontagePlayRate(int32 MontageInstanceID);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="AI")
@@ -66,6 +69,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	TObjectPtr<UMotionWarpingComponent> MotionWarpingComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
+	TObjectPtr<UUPHitReactionComponent> HitReactionComp;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Team")
 	EUPTeamID TeamID = EUPTeamID::NoTeam;
@@ -77,14 +83,8 @@ protected:
 	TObjectPtr<UAnimMontage> AttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
-	TArray<TObjectPtr<UAnimMontage>> HitReactMontages;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
-	TArray<TObjectPtr<UAnimMontage>> DeathMontages;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	int HP = 100;
-	
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat")
 	int ATK = 20;
 
@@ -92,6 +92,7 @@ private:
 	float OriginalWalkSpeed;
 	bool bSprinting = false;
 	bool bAttacking = false;
-	int HitReactIndex = 0;
 	EUPMovementState MovementState = EUPMovementState::Idle;
+	FTimerHandle AttackerHitStopTimerHandle;
+	int32 AttackerHitStopMontageInstanceID = INDEX_NONE;
 };
